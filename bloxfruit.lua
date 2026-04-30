@@ -1,5 +1,98 @@
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("ZYRE HUB v4.0", "DarkTheme")
+local screenSize = game:GetService("UserInputService"):GetMouseLocation()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+-- Create Main GUI
+local mainGui = Instance.new("ScreenGui")
+mainGui.Name = "ZyreHub"
+mainGui.ResetOnSpawn = false
+mainGui.Parent = PlayerGui
+
+-- Main Frame (Draggable)
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 400, 0, 600)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -300)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = mainGui
+
+-- Add Corner Radius
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = mainFrame
+
+-- Title Bar (for dragging)
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 50)
+titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 12)
+titleCorner.Parent = titleBar
+
+-- Title Text
+local titleText = Instance.new("TextLabel")
+titleText.Name = "TitleText"
+titleText.Size = UDim2.new(1, -60, 1, 0)
+titleText.Position = UDim2.new(0, 10, 0, 0)
+titleText.BackgroundTransparency = 1
+titleText.TextColor3 = Color3.fromRGB(0, 200, 255)
+titleText.TextSize = 18
+titleText.Font = Enum.Font.GothamBold
+titleText.Text = "⭐ ZYRE HUB v4.0"
+titleText.TextXAlignment = Enum.TextXAlignment.Left
+titleText.Parent = titleBar
+
+-- Close Button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Name = "CloseBtn"
+closeBtn.Size = UDim2.new(0, 40, 0, 40)
+closeBtn.Position = UDim2.new(1, -50, 0, 5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.TextSize = 20
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Text = "✕"
+closeBtn.Parent = titleBar
+
+local closeBtnCorner = Instance.new("UICorner")
+closeBtnCorner.CornerRadius = UDim.new(0, 8)
+closeBtnCorner.Parent = closeBtn
+
+closeBtn.MouseButton1Click:Connect(function()
+    mainGui:Destroy()
+    print("❌ ZYRE HUB Closed")
+end)
+
+-- Content Frame (Scrollable)
+local contentFrame = Instance.new("Frame")
+contentFrame.Name = "ContentFrame"
+contentFrame.Size = UDim2.new(1, 0, 1, -50)
+contentFrame.Position = UDim2.new(0, 0, 0, 50)
+contentFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+contentFrame.BorderSizePixel = 0
+contentFrame.Parent = mainFrame
+
+-- Scroll View
+local scrollView = Instance.new("ScrollingFrame")
+scrollView.Name = "ScrollView"
+scrollView.Size = UDim2.new(1, 0, 1, 0)
+scrollView.BackgroundTransparency = 1
+scrollView.BorderSizePixel = 0
+scrollView.ScrollBarThickness = 8
+scrollView.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+scrollView.Parent = contentFrame
+
+-- Layout
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 10)
+layout.Parent = scrollView
 
 -- Variables
 local autoFarmEnabled = false
@@ -7,30 +100,98 @@ local autoLeviathanEnabled = false
 local autoQuestEnabled = false
 local autoChestEnabled = false
 local autoCombatEnabled = false
-local seaEventEnabled = false
-local autoFishingEnabled = false
 local killAuraEnabled = false
 local autoHealthEnabled = false
-local autoFruitEnabled = false
 local attackSpeed = 0.2 -- Default: Fast
 
-local Player = game.Players.LocalPlayer
 local Character = Player.Character or Player.CharacterAdded:Wait()
-local Humanoid = Character:WaitForChild("Humanoid")
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 
--- Tab & Sections
-local FarmingTab = Window:NewTab("🌾 FARMING")
-local SeaTab = Window:NewTab("🌊 SEA EVENTS")
-local UtilTab = Window:NewTab("⚙️ UTILITIES")
-local TeleportTab = Window:NewTab("🗺️ TELEPORT")
-local SettingsTab = Window:NewTab("⚙️ SETTINGS")
+-- Helper Function: Create Button
+local function createButton(text, description, callback)
+    local btn = Instance.new("TextButton")
+    btn.Name = text
+    btn.Size = UDim2.new(1, -20, 0, 50)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 14
+    btn.Font = Enum.Font.Gotham
+    btn.Text = "▶ " .. text
+    btn.Parent = scrollView
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = btn
+    
+    btn.MouseButton1Click:Connect(callback)
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    end)
+    btn.MouseLeave:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end)
+    
+    return btn
+end
 
--- FARMING TAB
-local FarmingSection = FarmingTab:NewSection("Auto Farm")
-local AttackSpeedSection = FarmingTab:NewSection("Attack Speed")
+-- Helper Function: Create Toggle Button
+local function createToggleButton(text, description, enabledVar, callback)
+    local btn = Instance.new("TextButton")
+    btn.Name = text
+    btn.Size = UDim2.new(1, -20, 0, 50)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 14
+    btn.Font = Enum.Font.Gotham
+    btn.Text = "◯ " .. text
+    btn.Parent = scrollView
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = btn
+    
+    btn.MouseButton1Click:Connect(function()
+        callback()
+        btn.BackgroundColor3 = enabledVar and Color3.fromRGB(0, 150, 100) or Color3.fromRGB(50, 50, 50)
+        btn.Text = (enabledVar and "✓ " or "◯ ") .. text
+    end)
+    
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    end)
+    
+    return btn
+end
 
--- Get Nearest Enemy
+-- Helper Function: Create Copy Button
+local function createCopyButton(text, copyText)
+    local btn = Instance.new("TextButton")
+    btn.Name = "Copy_" .. text
+    btn.Size = UDim2.new(1, -20, 0, 45)
+    btn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 12
+    btn.Font = Enum.Font.Gotham
+    btn.Text = "📋 " .. text
+    btn.Parent = scrollView
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = btn
+    
+    btn.MouseButton1Click:Connect(function()
+        setclipboard(copyText)
+        btn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+        btn.Text = "✅ Copied!"
+        wait(2)
+        btn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+        btn.Text = "📋 " .. text
+    end)
+    
+    return btn
+end
+
+-- Functions
 local function getNearestEnemy()
     local nearest = nil
     local shortestDistance = math.huge
@@ -52,12 +213,10 @@ local function getNearestEnemy()
     return nearest
 end
 
--- Attack Function
 local function attackEnemy(target)
     if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
         pcall(function()
             HumanoidRootPart.CFrame = target.HumanoidRootPart.CFrame + target.HumanoidRootPart.CFrame.LookVector * 5
-            
             local combatRemote = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):FindFirstChild("Combat")
             if combatRemote then
                 combatRemote:FindFirstChild("Melee"):FireServer(target)
@@ -66,349 +225,186 @@ local function attackEnemy(target)
     end
 end
 
--- Auto Farm Mobs Loop
-local function farmMobs()
-    while autoFarmEnabled do
-        pcall(function()
-            local enemy = getNearestEnemy()
-            if enemy then
-                attackEnemy(enemy)
-            end
-        end)
-        wait(attackSpeed)
-    end
-end
+-- FARMING SECTION
+createButton("🌾 FARMING", "Farming Features", function() end)
 
--- Auto Combat
-local function autoCombat()
-    while autoCombatEnabled do
-        pcall(function()
-            local enemy = getNearestEnemy()
-            if enemy then
-                HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame + enemy.HumanoidRootPart.CFrame.LookVector * 8
-                attackEnemy(enemy)
-            end
-        end)
-        wait(attackSpeed)
-    end
-end
-
--- Auto Leviathan
-local function autoLeviathan()
-    while autoLeviathanEnabled do
-        pcall(function()
-            local leviathan = workspace:FindFirstChild("Leviathan")
-            if leviathan and leviathan:FindFirstChild("Humanoid") then
-                if leviathan.Humanoid.Health > 0 then
-                    HumanoidRootPart.CFrame = leviathan.HumanoidRootPart.CFrame + leviathan.HumanoidRootPart.CFrame.LookVector * 10
-                    attackEnemy(leviathan)
-                end
-            end
-        end)
-        wait(attackSpeed)
-    end
-end
-
--- Auto Chest
-local function collectChests()
-    while autoChestEnabled do
-        pcall(function()
-            local chestsFolder = workspace:FindFirstChild("Chests")
-            if chestsFolder then
-                for _, chest in pairs(chestsFolder:GetChildren()) do
-                    if chest:FindFirstChild("ClickDetector") then
-                        local distance = (chest.Position - HumanoidRootPart.Position).Magnitude
-                        if distance < 100 then
-                            fireclickdetector(chest.ClickDetector)
-                            wait(0.5)
-                        end
-                    end
-                end
-            end
-        end)
-        wait(1)
-    end
-end
-
--- Auto Quest
-local function completeQuest()
-    while autoQuestEnabled do
-        pcall(function()
-            local remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
-            local questRemote = remotes:FindFirstChild("CommF_")
-            if questRemote then
-                questRemote:InvokeServer("StartQuest", Player)
-            end
-        end)
-        wait(3)
-    end
-end
-
--- Auto Sea Event
-local function autoSeaEvent()
-    while seaEventEnabled do
-        pcall(function()
-            local seaBoss = workspace:FindFirstChild("SeaBoss")
-            if seaBoss and seaBoss:FindFirstChild("Humanoid") then
-                if seaBoss.Humanoid.Health > 0 then
-                    HumanoidRootPart.CFrame = seaBoss.HumanoidRootPart.CFrame + seaBoss.HumanoidRootPart.CFrame.LookVector * 10
-                    attackEnemy(seaBoss)
-                end
-            end
-        end)
-        wait(attackSpeed)
-    end
-end
-
--- Auto Fishing
-local function autoFishing()
-    while autoFishingEnabled do
-        pcall(function()
-            local fishing = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):FindFirstChild("Fishing")
-            if fishing then
-                fishing:FireServer("Cast")
-            end
-        end)
-        wait(5)
-    end
-end
-
--- Kill Aura
-local function killAura()
-    while killAuraEnabled do
-        pcall(function()
-            local enemies = workspace:FindFirstChild("Enemies")
-            if enemies then
-                for _, enemy in pairs(enemies:GetChildren()) do
-                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-                        local distance = (enemy.HumanoidRootPart.Position - HumanoidRootPart.Position).Magnitude
-                        if distance < 50 then
-                            attackEnemy(enemy)
-                        end
-                    end
-                end
-            end
-        end)
-        wait(attackSpeed)
-    end
-end
-
--- Auto Health
-local function autoHealth()
-    while autoHealthEnabled do
-        pcall(function()
-            if Humanoid.Health < Humanoid.MaxHealth * 0.5 then
-                local healthRemote = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):FindFirstChild("Heal")
-                if healthRemote then
-                    healthRemote:FireServer()
-                end
-            end
-        end)
-        wait(1)
-    end
-end
-
--- Auto Fruit Eat
-local function autoFruit()
-    while autoFruitEnabled do
-        pcall(function()
-            local inventory = Player:WaitForChild("Backpack")
-            for _, item in pairs(inventory:GetChildren()) do
-                if item:IsA("Tool") and item.Name:match("Fruit") then
-                    item:Activate()
-                    wait(2)
-                end
-            end
-        end)
-        wait(5)
-    end
-end
-
--- FARMING TAB BUTTONS
-FarmingSection:NewButton("Auto Farm Mobs", "Auto attack nearby enemies", function()
+createToggleButton("⚔️ Auto Farm Mobs", "Auto attack enemies", autoFarmEnabled, function()
     autoFarmEnabled = not autoFarmEnabled
     if autoFarmEnabled then
-        task.spawn(farmMobs)
+        task.spawn(function()
+            while autoFarmEnabled do
+                pcall(function()
+                    local enemy = getNearestEnemy()
+                    if enemy then
+                        attackEnemy(enemy)
+                    end
+                end)
+                wait(attackSpeed)
+            end
+        end)
         print("✅ Auto Farm: ON")
     else
         print("❌ Auto Farm: OFF")
     end
 end)
 
-FarmingSection:NewButton("Auto Leviathan", "Auto fight Leviathan boss", function()
+createToggleButton("⚡ Auto Combat", "Advanced combat", autoCombatEnabled, function()
+    autoCombatEnabled = not autoCombatEnabled
+    if autoCombatEnabled then
+        task.spawn(function()
+            while autoCombatEnabled do
+                pcall(function()
+                    local enemy = getNearestEnemy()
+                    if enemy then
+                        HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame + enemy.HumanoidRootPart.CFrame.LookVector * 8
+                        attackEnemy(enemy)
+                    end
+                end)
+                wait(0.1)
+            end
+        end)
+        print("✅ Auto Combat: ON")
+    else
+        print("❌ Auto Combat: OFF")
+    end
+end)
+
+createToggleButton("👹 Auto Leviathan", "Fight Leviathan boss", autoLeviathanEnabled, function()
     autoLeviathanEnabled = not autoLeviathanEnabled
     if autoLeviathanEnabled then
-        task.spawn(autoLeviathan)
+        task.spawn(function()
+            while autoLeviathanEnabled do
+                pcall(function()
+                    local leviathan = workspace:FindFirstChild("Leviathan")
+                    if leviathan and leviathan:FindFirstChild("Humanoid") then
+                        if leviathan.Humanoid.Health > 0 then
+                            HumanoidRootPart.CFrame = leviathan.HumanoidRootPart.CFrame + leviathan.HumanoidRootPart.CFrame.LookVector * 10
+                            attackEnemy(leviathan)
+                        end
+                    end
+                end)
+                wait(0.5)
+            end
+        end)
         print("✅ Auto Leviathan: ON")
     else
         print("❌ Auto Leviathan: OFF")
     end
 end)
 
-FarmingSection:NewButton("Auto Quest", "Auto complete quests", function()
-    autoQuestEnabled = not autoQuestEnabled
-    if autoQuestEnabled then
-        task.spawn(completeQuest)
-        print("✅ Auto Quest: ON")
-    else
-        print("❌ Auto Quest: OFF")
-    end
-end)
-
-FarmingSection:NewButton("Auto Chest", "Auto collect chests", function()
-    autoChestEnabled = not autoChestEnabled
-    if autoChestEnabled then
-        task.spawn(collectChests)
-        print("✅ Auto Chest: ON")
-    else
-        print("❌ Auto Chest: OFF")
-    end
-end)
-
 -- ATTACK SPEED SELECTION
-AttackSpeedSection:NewButton("⚡ Legit Attack (Safe)", "0.5s - Won't get banned", function()
+createButton("⚡ ATTACK SPEED", "Select Attack Speed", function() end)
+
+createButton("🐢 Legit Attack (0.5s)", "Safe - Won't get banned", function()
     attackSpeed = 0.5
-    print("🟢 Legit Attack Speed Selected")
+    print("✅ Legit Attack Selected (0.5s)")
 end)
 
-AttackSpeedSection:NewButton("⚡ Fast Attack", "0.2s - Balanced", function()
+createButton("⚡ Fast Attack (0.2s)", "Faster farming", function()
     attackSpeed = 0.2
-    print("🟡 Fast Attack Speed Selected")
+    print("✅ Fast Attack Selected (0.2s)")
 end)
 
-AttackSpeedSection:NewButton("⚡ Super Fast Attack", "0.05s - Maximum", function()
+createButton("💥 SuperFast Attack (0.05s)", "Maximum speed", function()
     attackSpeed = 0.05
-    print("🔴 Super Fast Attack Speed Selected")
+    print("✅ SuperFast Attack Selected (0.05s)")
 end)
 
--- SEA EVENTS TAB
-local SeaSection = SeaTab:NewSection("Sea Events")
+-- UTILITIES
+createButton("🛠️ UTILITIES", "Utility Features", function() end)
 
-SeaSection:NewButton("Auto Sea Event", "Fight sea bosses", function()
-    seaEventEnabled = not seaEventEnabled
-    if seaEventEnabled then
-        task.spawn(autoSeaEvent)
-        print("✅ Auto Sea Event: ON")
-    else
-        print("❌ Auto Sea Event: OFF")
-    end
-end)
-
-SeaSection:NewButton("Auto Fishing", "Auto fish", function()
-    autoFishingEnabled = not autoFishingEnabled
-    if autoFishingEnabled then
-        task.spawn(autoFishing)
-        print("✅ Auto Fishing: ON")
-    else
-        print("❌ Auto Fishing: OFF")
-    end
-end)
-
--- UTILITIES TAB
-local UtilSection = UtilTab:NewSection("Utilities")
-
-UtilSection:NewButton("Kill Aura", "Attack all nearby enemies", function()
+createToggleButton("🎯 Kill Aura", "Attack all nearby", killAuraEnabled, function()
     killAuraEnabled = not killAuraEnabled
     if killAuraEnabled then
-        task.spawn(killAura)
+        task.spawn(function()
+            while killAuraEnabled do
+                pcall(function()
+                    for _, enemy in pairs(workspace:FindFirstChild("Enemies"):GetChildren()) do
+                        if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                            local distance = (enemy.HumanoidRootPart.Position - HumanoidRootPart.Position).Magnitude
+                            if distance < 50 then
+                                attackEnemy(enemy)
+                            end
+                        end
+                    end
+                end)
+                wait(0.1)
+            end
+        end)
         print("✅ Kill Aura: ON")
     else
         print("❌ Kill Aura: OFF")
     end
 end)
 
-UtilSection:NewButton("Auto Health", "Auto heal when low HP", function()
+createToggleButton("❤️ Auto Health", "Auto heal", autoHealthEnabled, function()
     autoHealthEnabled = not autoHealthEnabled
     if autoHealthEnabled then
-        task.spawn(autoHealth)
+        task.spawn(function()
+            while autoHealthEnabled do
+                pcall(function()
+                    local humanoid = Character:FindFirstChild("Humanoid")
+                    if humanoid and humanoid.Health < humanoid.MaxHealth * 0.5 then
+                        game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):FindFirstChild("Heal"):FireServer()
+                    end
+                end)
+                wait(1)
+            end
+        end)
         print("✅ Auto Health: ON")
     else
         print("❌ Auto Health: OFF")
     end
 end)
 
-UtilSection:NewButton("Auto Fruit Eat", "Auto eat fruits", function()
-    autoFruitEnabled = not autoFruitEnabled
-    if autoFruitEnabled then
-        task.spawn(autoFruit)
-        print("✅ Auto Fruit: ON")
-    else
-        print("❌ Auto Fruit: OFF")
-    end
-end)
+-- COPY BUTTONS
+createButton("📋 COPY CODE", "Copy Script Links", function() end)
 
--- TELEPORT TAB
-local TeleSection = TeleportTab:NewSection("Quick Teleport")
+createCopyButton("Copy Script URL", "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/zyreenn/Bloxfruit/main/bloxfruit.lua\"))()")
 
-TeleSection:NewButton("Teleport to Merchant", "Go to merchant", function()
-    pcall(function()
-        HumanoidRootPart.CFrame = CFrame.new(100, 50, 100)
-        print("📍 Teleported to Merchant")
-    end)
-end)
+createCopyButton("Copy Legit Attack", "attackSpeed = 0.5")
 
-TeleSection:NewButton("Teleport to Trainer", "Go to trainer", function()
-    pcall(function()
-        HumanoidRootPart.CFrame = CFrame.new(0, 50, 0)
-        print("📍 Teleported to Trainer")
-    end)
-end)
+createCopyButton("Copy Fast Attack", "attackSpeed = 0.2")
 
-TeleSection:NewButton("Teleport to Quest NPC", "Go to quest NPC", function()
-    pcall(function()
-        HumanoidRootPart.CFrame = CFrame.new(50, 50, 50)
-        print("📍 Teleported to Quest NPC")
-    end)
-end)
+createCopyButton("Copy SuperFast Attack", "attackSpeed = 0.05")
 
--- SETTINGS TAB
-local CopySection = SettingsTab:NewSection("📋 COPY CODE")
-
-CopySection:NewLabel("Copy Script URL:")
-CopySection:NewButton("📋 Copy Script URL", "Click to copy in clipboard", function()
-    local url = "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/zyreenn/Bloxfruit/main/bloxfruit.lua\"))()"
-    print("✅ Copied to clipboard: " .. url)
-    setclipboard(url)
-end)
-
-CopySection:NewLabel("Copy Features:")
-CopySection:NewButton("📋 Copy Legit Attack Code", "Legit attack method", function()
-    local code = "attackSpeed = 0.5 -- Legit Attack"
-    setclipboard(code)
-    print("✅ Copied Legit Attack code")
-end)
-
-CopySection:NewButton("📋 Copy Fast Attack Code", "Fast attack method", function()
-    local code = "attackSpeed = 0.2 -- Fast Attack"
-    setclipboard(code)
-    print("✅ Copied Fast Attack code")
-end)
-
-CopySection:NewButton("📋 Copy SuperFast Code", "SuperFast attack method", function()
-    local code = "attackSpeed = 0.05 -- Super Fast Attack"
-    setclipboard(code)
-    print("✅ Copied SuperFast code")
-end)
-
-local StopSection = SettingsTab:NewSection("Control")
-
-StopSection:NewButton("⛔ Stop All", "Disable all features", function()
+-- STOP ALL
+createButton("⛔ STOP ALL", "Disable all features", function()
     autoFarmEnabled = false
     autoLeviathanEnabled = false
     autoQuestEnabled = false
-    autoChestEnabled = false
     autoCombatEnabled = false
-    seaEventEnabled = false
-    autoFishingEnabled = false
     killAuraEnabled = false
     autoHealthEnabled = false
-    autoFruitEnabled = false
     print("⛔ All features stopped")
 end)
 
-StopSection:NewButton("❌ Close Menu", "Close ZYRE HUB", function()
-    Window:Close()
-    print("ZYRE HUB Closed")
+-- Dragging Logic
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
+titleBar.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
 end)
 
-print("✅ ZYRE HUB v4.0 Loaded! - All features ready!")
+game:GetService("UserInputService").InputChanged:Connect(function(input, gameProcessed)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+game:GetService("UserInputService").InputEnded:Connect(function(input, gameProcessed)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+print("✅ ZYRE HUB v4.0 Loaded! Drag the menu to move it!")
